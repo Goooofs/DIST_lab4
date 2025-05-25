@@ -12,6 +12,7 @@ add_executable(main
     src/main.cpp
     src/singleton.cpp
     src/aes_encrypt.cpp
+    src/dirsearch.cpp
 )
 
 target_link_libraries(main OpenSSL::Crypto)
