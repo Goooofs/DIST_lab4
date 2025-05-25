@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-bool aesEncryptFile(const std::string& inFile, const std::string& outFile, const std::string& keyStr) {
+bool AES::aesEncryptFile(const std::string& inFile, const std::string& outFile, const std::string& keyStr) {
     std::ifstream in(inFile, std::ios::binary);
 
     if (!in) {
@@ -44,7 +44,7 @@ bool aesEncryptFile(const std::string& inFile, const std::string& outFile, const
     return true;
 }
 
-bool aesDecryptFile(const std::string& inFile, const std::string& outFile, const std::string& keyStr) {
+bool AES::aesDecryptFile(const std::string& inFile, const std::string& outFile, const std::string& keyStr) {
     std::ifstream in(inFile, std::ios::binary);
 
     if (!in) {
