@@ -5,18 +5,22 @@
 
 class Singleton {
 public:
-    static Singleton& Instance();
-
-    bool encryptFile(const std::string& filename, const std::string& password);
-    bool decryptFile(const std::string& filename, const std::string& password);
+    static Singleton& getInstance();
+    
+    void setKey(const std::string& key);
+    void encrypt(const std::string& path);
+    void decrypt(const std::string& path);
 
 private:
     Singleton() = default;
     ~Singleton() = default;
-
+    
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;
-
+    
+    void processFile(const std::string& filePath, bool encryptMode);
+    
+    std::string current_key;
 };
 
 #endif // SINGLETON_H

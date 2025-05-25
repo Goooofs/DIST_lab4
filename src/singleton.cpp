@@ -1,64 +1,66 @@
 #include "../include/singleton.h"
 #include "../include/aes_encrypt.h"
-
-#include <filesystem>
+#include "../include/dirsearch.h"
 #include <iostream>
+#include <cstdio>
 
-namespace fs = std::filesystem;
-
-Singleton& Singleton::Instance() {
+Singleton& Singleton::getInstance() {
     static Singleton instance;
     return instance;
 }
 
-bool Singleton::encryptFile(const std::string& filename, const std::string& password) {
-    if (!fs::exists(filename)) {
-        std::cerr << "Файл не найден: " << filename << std::endl;
-        return false;
-    }
-
-    std::string outputFile = filename + ".enc";
-
-    bool result = aesEncryptFile(filename, outputFile, password);
-    if (result) {
-
-        fs::remove(filename);
-        std::cout << "Файл успешно зашифрован: " << outputFile << std::endl;
-
-    } else {
-
-        std::cerr << "Ошибка при шифровании файла." << std::endl;
-
-    }
-    return result;
+void Singleton::setKey(const std::string& key) {
+    current_key = key;
 }
 
-bool Singleton::decryptFile(const std::string& filename, const std::string& password) {
-    namespace fs = std::filesystem;
-
-    if (!fs::exists(filename)) {
-        std::cerr << "Файл не найден: " << filename << std::endl;
-        return false;
+void Singleton::encrypt(const std::string& path) {
+    auto files = DirSearch::getAllFilesRecursively(path);
+    for (const auto& file : files) {
+        processFile(file, true);
     }
+}
 
-    std::string outputFileTmp = filename + ".tmp";
-    std::string outputFileFinal = filename.substr(0, filename.size() - 4);
-
-    bool result = aesDecryptFile(filename, outputFileTmp, password);
-    if (result) {
-
-        fs::remove(filename);
-        fs::rename(outputFileTmp, outputFileFinal);
-        std::cout << "Файл успешно дешифрован: " << outputFileFinal << std::endl;
-
-    } else {
-
-        std::cerr << "Ошибка при дешифровании файла. Неверный пароль или повреждённые данные." << std::endl;
-        if (fs::exists(outputFileTmp)) {
-            fs::remove(outputFileTmp);
+void Singleton::decrypt(const std::string& path) {
+    auto files = DirSearch::getAllFilesRecursively(path);
+    for (const auto& file : files) {
+        try {
+            if (file.size() > 4 && file.substr(file.size() - 4) == ".enc") {
+                processFile(file, false);
+            } else {
+                std::cout << "Пропускаем (не .enc файл): " << file << std::endl;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Ошибка дешифрования " << file << ": " << e.what() << std::endl;
         }
-
     }
-    return result;
 }
 
+void Singleton::processFile(const std::string& filePath, bool encryptMode) {
+    std::string tempFile = filePath + ".tmp";
+    bool success = false;
+    
+    if (encryptMode) {
+        success = AES::aesEncryptFile(filePath, tempFile, current_key);
+    } else {
+        std::string outputFile = filePath.substr(0, filePath.size() - 4);
+        success = AES::aesDecryptFile(filePath, tempFile, current_key);
+    }
+
+    if (success) {
+        std::remove(filePath.c_str()) != 0;
+
+        std::string newName = filePath;
+        if (encryptMode) {
+            newName += ".enc";
+        } else {
+            newName.resize(newName.size() - 4);
+        }
+        
+        std::rename(tempFile.c_str(), newName.c_str()) != 0;
+        
+        std::cout << "Успешно: " << filePath << " -> " << newName << std::endl;
+    } else {
+        std::remove(tempFile.c_str());
+        throw std::runtime_error("Ошибка обработки файла");
+    }
+}
