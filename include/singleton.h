@@ -7,7 +7,6 @@ class Singleton {
 public:
     static Singleton& Instance();
 
-    // Заглушки для шифрования и дешифрования
     bool encryptFile(const std::string& filename, const std::string& password);
     bool decryptFile(const std::string& filename, const std::string& password);
 
